@@ -1,1 +1,2 @@
-simple graphics engine to generate geometrical shapes in 3d space with camera using OpenGL, GLM, GLFW
+<h3>preview</h3>
+<img src="./screenshots/terrain.jpeg" title="exe" alt="terrain" style="width: 500px;">

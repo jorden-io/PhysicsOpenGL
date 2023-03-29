@@ -8,38 +8,72 @@
 #include "filesystem.h"
 #include "shader.h"
 #include "PerlinNoise.hpp"
+#include "defines.hpp"
 #include <unistd.h>
 #include <ctime>
+#define SCR_WIDTH 1600
+#define SCR_HEIGHT 1600
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+i32 magnitude = 4;
+f64 per = 0.5;
+f32 map[250][250];
+void framebuffer_size_callback(GLFWwindow *window, i32 width, i32 height);
+void mouse_callback(GLFWwindow *window, f64 xpos, f64 ypos);
+void scroll_callback(GLFWwindow *window, f64 xoffset, f64 yoffset);
 void processInput(GLFWwindow *window);
 
-// settings
-const unsigned int SCR_WIDTH = 1600;
-const unsigned int SCR_HEIGHT = 1000;
-
-// camera
-glm::vec3 cameraPos = glm::vec3(50.0f, 10.0f, 75.0f);
+glm::vec3 cameraPos = glm::vec3(-100.0f, 225.0f, 175.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool firstMouse = true;
-float yaw = -90.0f; 
-float pitch = 0.0f;
-float lastX = 800.0f / 2.0;
-float lastY = 600.0 / 2.0;
-float fov = 45.0f;
+f32 yaw = -90.0f;
+f32 pitch = 0.0f;
+f32 lastX = 800.0f / 2.0;
+f32 lastY = 600.0 / 2.0;
+f32 fov = 100.0f;
 
-float deltaTime = 0.0f; 
-float lastFrame = 0.0f;
+f32 deltaTime = 0.0f;
+f32 lastFrame = 0.0f;
+
 bool to_rotate = false;
 bool one = false;
 glm::vec3 cubePositions[22500]{};
+template <size_t n = 50000>
+void jump_y(glm::vec3 cube_pos[(i32)n])
+{
+    for (i32 i = 0; i < 1000; i++)
+    {
+        cube_pos[i] = glm::vec3{0.0f, (f32)i, 0.0f};
+    };
+    return;
+};
+void change_magnitude(f32 map[250][250], i32 magnitude)
+{
+    i32 iter = 0;
+    const siv::PerlinNoise::seed_type seed = 123456u * magnitude;
+    const siv::PerlinNoise perlin{seed};
+    for (i32 i = 0; i < 150; i++)
+    {
+        for (i32 j = 0; j < 150; j++)
+        {
+            const double noise = perlin.octave2D((f64)((i * 0.003)), (f64)((j * 0.003)), (i32)magnitude, per);
+            map[i][j] = (f32)(noise * 250);
+        };
+    };
+#define h_magnitude 25
+    for (i32 i = 0; i < 150; i++)
+    {
+        for (i32 j = 0; j < 150; j++)
+        {
+            iter++;
+            cubePositions[iter] = glm::vec3{(float)j, (float)map[i][j], (float)i};
+        };
+    }
+    return;
+};
 int main()
 {
-    int iter = 0;
     const siv::PerlinNoise::seed_type seed = 123456u;
     const siv::PerlinNoise perlin{seed};
     glfwInit();
@@ -65,86 +99,270 @@ int main()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
-    // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
-
-    // build and compile our shader zprogram
-    // ------------------------------------
     Shader ourShader("camera.vs", "camera.fs");
+    f32 colors[40] = {
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
+//#define SHOWV 0
+    f32 vertices[200] = {
+#ifdef SHOWV
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    #define SHOWV 0
-    float vertices[] = {
-        #ifdef SHOWV
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        0.0f,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1.0f,
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+        0.0f,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1.0f,
+        1.0f,
+        0.5f,
+        0.5f,
+        -0.5f,
 
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+        1.0f,
+        1.0f,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        0.0f,
 
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        #endif
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        1.0f,
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        1.0f,
+        -0.5f,
+        0.5f,
+        0.5f,
+        0.0f,
+        1.0f,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
 
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        #ifdef SHOWV
+        -0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        1.0f,
+        1.0f,
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        -0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
 
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, - 0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f
-        #endif
-        };
-    //#define STAIRS 0
-    for (int i = 0; i < 150; i++)
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1.0f,
+        1.0f,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+#endif
+
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1.0f,
+        1.0f,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+#ifdef SHOWV
+
+        -0.5f,
+        0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1.0f,
+        1.0f,
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        0.5f,
+        0.5f,
+        0.5f,
+        1.0f,
+        0.0f,
+        -0.5f,
+        0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+
+#endif
+    };
+    i32 iter = 0;
+// #define STAIRS 0
+#define CLOSE 0
+#ifndef CLOSE
+    for (i32 k = 0; k < 100; k += 5)
     {
-        for (int j = 0; j < 150; j++)
+        for (i32 i = 0; i < 100; i += 5)
         {
-            iter++;
-            #ifdef STAIRS
-            cubePositions[iter] = glm::vec3{(float)j, iter % 1 == 0 ? (float)j : (float)iter, (float)i};
-            #else
-            cubePositions[iter] = glm::vec3{(float)j, 0.0f, (float)i};
-            #endif
+            for (i32 j = 0; j < 100; j += 5)
+            {
+                iter++;
+#ifdef STAIRS
+                cubePositions[iter] = glm::vec3{(f32)j, iter % 1 == 0 ? (f32)j : (f32)iter, (f32)i};
+#else
+                cubePositions[iter] = glm::vec3{(f32)i, (f32)j, (f32)k};
+#endif
+            }
         }
     }
-    // world space positions of our cubes
-    unsigned int VBO, VAO;
+#else
+#define MAG 4
+    for (i32 i = 0; i < 150; i++)
+    {
+        for (i32 j = 0; j < 150; j++)
+        {
+            const f64 noise = perlin.octave2D_01((f64)((i * 0.025)), (f64)((j * 0.0025)), (i32)magnitude);
+            map[i][j] = (f32)(noise * 550);
+        };
+    };
+#define h_magnitude 25
+    i32 inner_iter = iter;
+    for (i32 i = 0; i < 150; i++)
+    {
+        for (i32 j = 0; j < 150; j++)
+        {
+            iter++;
+            cubePositions[iter] = glm::vec3{(f32)j, (f32)map[i][j], (f32)i};
+        };
+    }
+//     iter = 0;
+//     for (i32 k = 0; k < 10; k++)
+//     {
+//         for (i32 i = 0; i < 10; i++)
+//         {
+//             for (i32 j = 0; j < 10; j++)
+//             {
+//                 iter++;
+// #ifdef STAIRS
+//                 cubePositions[iter] = glm::vec3{(f32)j, iter % 1 == 0 ? (f32)j : (f32)iter, (f32)i};
+// #else
+//                 cubePositions[iter] = glm::vec3{(f32)i, (f32)k, (f32)j};
+// #endif
+//             }
+//         }
+//     }
+#endif
+    ui32 VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -153,72 +371,57 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(f32), (void *)0);
     glEnableVertexAttribArray(0);
-    // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    ourShader.use();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(f32), (void *)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(1);
+
+    ourShader.use();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     while (!glfwWindowShouldClose(window))
     {
-        // per-frame time logic
-        // --------------------
-        float currentFrame = static_cast<float>(glfwGetTime());
+        float currentFrame = static_cast<f32>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // input
-        // -----
         processInput(window);
 
-        // render
-        // ------
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ourShader.use();
 
-        // pass projection matrix to shader (note that in this case it could change every frame)
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (f32)SCR_WIDTH / (f32)SCR_HEIGHT, 0.1f, 10000.0f);
         ourShader.setMat4("projection", projection);
 
-        // camera/view transformation
         glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         ourShader.setMat4("view", view);
 
-        // render boxes
         glBindVertexArray(VAO);
-        for (unsigned int i = 0; i <= 22500; i++)
+        for (ui32 i = 0; i <= 22500; i++)
         {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            const double noise = perlin.octave3D(1, 1, 1, 8);
-            glm::mat4 model = glm::mat4(1.0f); 
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 30.0f * i;
-            if (one)
-            {
-                for (int i = 1; i <= 100; i++)
-                {
-                    cubePositions[i] = glm::vec3{};
-                }
-            };
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, (cubePositions[i]));
+            f32 angle = 10.0f * i;
+            // if (one)
+            // {
+            //     for (i32 i = 1; i <= 1000; i++)
+            //     {
+            //         cubePositions[i] = glm::vec3{};
+            //     }
+            // };
             if (to_rotate)
             {
                 angle = 30.0f * i * std::rand();
                 model = glm::rotate(model,
-                                    (float)glfwGetTime(),
+                                    (f32)glfwGetTime(),
+                                    // * std::rand() + std::rand(),
                                     // glm::radians(angle)
-                                    glm::vec3(1.0f, 0.3f, 0.5f));
+                                    glm::vec3(-1.0f, 0.3f, 0.5f));
             };
             ourShader.setMat4("model", model);
-
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -234,12 +437,26 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    f32 cameraSpeed = static_cast<f32>(8.5 * deltaTime);
 
-    float cameraSpeed = static_cast<float>(8.5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+        cameraSpeed += 1;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+        per += 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+        per -= 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
+        magnitude += 1;
+    change_magnitude(map, magnitude);
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
+        magnitude -= 1;
+    change_magnitude(map, magnitude);
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-        for (int i = 0; i < 200; i++)
-            for (int j = 0; j < 200; j++)
-                cubePositions[i] = glm::vec3{(float)j, 0.0f, (float)i};
+        for (i32 i = 0; i < 200; i++)
+            for (i32 j = 0; j < 200; j++)
+                cubePositions[i] = glm::vec3{static_cast<f32>(j), 0.0f, static_cast<f32>(i)};
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+        jump_y<>(cubePositions);
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
         one = true;
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
@@ -254,15 +471,15 @@ void processInput(GLFWwindow *window)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+void framebuffer_size_callback(GLFWwindow *window, i32 width, i32 height)
 {
     glViewport(0, 0, width, height);
 }
 
-void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
+void mouse_callback(GLFWwindow *window, f64 xposIn, f64 yposIn)
 {
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+    f32 xpos = static_cast<f32>(xposIn);
+    f32 ypos = static_cast<f32>(yposIn);
 
     if (firstMouse)
     {
@@ -271,12 +488,12 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
         firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
+    f32 xoffset = xpos - lastX;
+    f32 yoffset = lastY - ypos;
     lastX = xpos;
     lastY = ypos;
 
-    float sensitivity = 0.1f; 
+    f32 sensitivity = 0.1f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
@@ -295,9 +512,9 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
     cameraFront = glm::normalize(front);
 }
 
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow *window, f64 xoffset, f64 yoffset)
 {
-    fov -= (float)yoffset;
+    fov -= (f32)yoffset;
     if (fov < 1.0f)
         fov = 1.0f;
     if (fov > 45.0f)
