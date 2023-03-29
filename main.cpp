@@ -15,14 +15,15 @@
 #define SCR_HEIGHT 1600
 
 i32 magnitude = 4;
+i64 cube_m = 1;
 f64 per = 0.5;
-f32 map[250][250];
+f32 map[1000][1000];
 void framebuffer_size_callback(GLFWwindow *window, i32 width, i32 height);
 void mouse_callback(GLFWwindow *window, f64 xpos, f64 ypos);
 void scroll_callback(GLFWwindow *window, f64 xoffset, f64 yoffset);
 void processInput(GLFWwindow *window);
 
-glm::vec3 cameraPos = glm::vec3(-100.0f, 225.0f, 175.0f);
+glm::vec3 cameraPos = glm::vec3(-1.0f, 5.0f, 10.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -38,7 +39,7 @@ f32 lastFrame = 0.0f;
 
 bool to_rotate = false;
 bool one = false;
-glm::vec3 cubePositions[22500]{};
+glm::vec3 cubePositions[1000000]{};
 template <size_t n = 50000>
 void jump_y(glm::vec3 cube_pos[(i32)n])
 {
@@ -48,26 +49,26 @@ void jump_y(glm::vec3 cube_pos[(i32)n])
     };
     return;
 };
-void change_magnitude(f32 map[250][250], i32 magnitude)
+void change_magnitude(f32 map[1000][1000], i32 magnitude)
 {
     i32 iter = 0;
     const siv::PerlinNoise::seed_type seed = 123456u * magnitude;
     const siv::PerlinNoise perlin{seed};
-    for (i32 i = 0; i < 150; i++)
+    for (i32 i = 0; i < cube_m; i++)
     {
-        for (i32 j = 0; j < 150; j++)
+        for (i32 j = 0; j < cube_m; j++)
         {
             const double noise = perlin.octave2D((f64)((i * 0.003)), (f64)((j * 0.003)), (i32)magnitude, per);
             map[i][j] = (f32)(noise * 250);
         };
     };
 #define h_magnitude 25
-    for (i32 i = 0; i < 150; i++)
+    for (i32 i = 0; i < cube_m; i++)
     {
-        for (i32 j = 0; j < 150; j++)
+        for (i32 j = 0; j < cube_m; j++)
         {
             iter++;
-            cubePositions[iter] = glm::vec3{(float)j, (float)map[i][j], (float)i};
+            cubePositions[iter] = glm::vec3{(f32)j, (f32)map[i][j], (f32)i};
         };
     }
     return;
@@ -110,7 +111,7 @@ int main()
         0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
         -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
-//#define SHOWV 0
+#define SHOWV 0
     f32 vertices[200] = {
 #ifdef SHOWV
 
@@ -327,9 +328,9 @@ int main()
     }
 #else
 #define MAG 4
-    for (i32 i = 0; i < 150; i++)
+    for (i32 i = 0; i < cube_m; i++)
     {
-        for (i32 j = 0; j < 150; j++)
+        for (i32 j = 0; j < cube_m; j++)
         {
             const f64 noise = perlin.octave2D_01((f64)((i * 0.025)), (f64)((j * 0.0025)), (i32)magnitude);
             map[i][j] = (f32)(noise * 550);
@@ -337,9 +338,9 @@ int main()
     };
 #define h_magnitude 25
     i32 inner_iter = iter;
-    for (i32 i = 0; i < 150; i++)
+    for (i32 i = 0; i < cube_m; i++)
     {
-        for (i32 j = 0; j < 150; j++)
+        for (i32 j = 0; j < cube_m; j++)
         {
             iter++;
             cubePositions[iter] = glm::vec3{(f32)j, (f32)map[i][j], (f32)i};
@@ -378,7 +379,7 @@ int main()
     glEnableVertexAttribArray(1);
 
     ourShader.use();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<f32>(glfwGetTime());
@@ -398,7 +399,7 @@ int main()
         ourShader.setMat4("view", view);
 
         glBindVertexArray(VAO);
-        for (ui32 i = 0; i <= 22500; i++)
+        for (ui32 i = 0; i <= cube_m * cube_m; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, (cubePositions[i]));
@@ -441,6 +442,10 @@ void processInput(GLFWwindow *window)
 
     if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
         cameraSpeed += 1;
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+        cube_m += 1;
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+        cube_m -= 1;
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
         per += 0.01f;
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
