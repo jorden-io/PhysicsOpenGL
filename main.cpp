@@ -18,6 +18,7 @@ i32 magnitude = 4;
 i64 cube_m = 1;
 f64 per = 0.5;
 f32 map[1000][1000];
+i32 test = 250;
 void framebuffer_size_callback(GLFWwindow *window, i32 width, i32 height);
 void mouse_callback(GLFWwindow *window, f64 xpos, f64 ypos);
 void scroll_callback(GLFWwindow *window, f64 xoffset, f64 yoffset);
@@ -58,8 +59,8 @@ void change_magnitude(f32 map[1000][1000], i32 magnitude)
     {
         for (i32 j = 0; j < cube_m; j++)
         {
-            const double noise = perlin.octave2D((f64)((i * 0.003)), (f64)((j * 0.003)), (i32)magnitude, per);
-            map[i][j] = (f32)(noise * 250);
+            const double noise = perlin.octave2D((f64)((i * 0.0035)), (f64)((j * 0.0035)), (i32)magnitude, per);
+            map[i][j] = (f32)(noise * test);
         };
     };
 #define h_magnitude 25
@@ -86,7 +87,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "JORDEN-IO", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "∑", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -106,7 +107,7 @@ int main()
         return -1;
     }
     glEnable(GL_DEPTH_TEST);
-    Shader ourShader("camera.vs", "camera.fs");
+    Shader ourShader("shader.vs", "shader.fs");
     f32 colors[40] = {
         0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
         -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
@@ -337,7 +338,6 @@ int main()
         };
     };
 #define h_magnitude 25
-    i32 inner_iter = iter;
     for (i32 i = 0; i < cube_m; i++)
     {
         for (i32 j = 0; j < cube_m; j++)
@@ -388,7 +388,7 @@ int main()
 
         processInput(window);
 
-        // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        //glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ourShader.use();
 
@@ -404,13 +404,13 @@ int main()
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, (cubePositions[i]));
             f32 angle = 10.0f * i;
-            // if (one)
-            // {
-            //     for (i32 i = 1; i <= 1000; i++)
-            //     {
-            //         cubePositions[i] = glm::vec3{};
-            //     }
-            // };
+            if (one)
+            {
+                for (i32 i = 1; i <= 1000; i++)
+                {
+                    cubePositions[i] = glm::vec3{};
+                }
+            };
             if (to_rotate)
             {
                 angle = 30.0f * i * std::rand();
@@ -418,7 +418,7 @@ int main()
                                     (f32)glfwGetTime(),
                                     // * std::rand() + std::rand(),
                                     // glm::radians(angle)
-                                    glm::vec3(-1.0f, 0.3f, 0.5f));
+                                    glm::vec3(-1.0f, 0.5, 0.5f));
             };
             ourShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -442,6 +442,8 @@ void processInput(GLFWwindow *window)
 
     if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
         cameraSpeed += 1;
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+        test += 1;
     if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
         cube_m += 1;
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
@@ -462,8 +464,8 @@ void processInput(GLFWwindow *window)
                 cubePositions[i] = glm::vec3{static_cast<f32>(j), 0.0f, static_cast<f32>(i)};
     if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
         jump_y<>(cubePositions);
-    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-        one = true;
+    // if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+    //     one = true;
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
         to_rotate = true;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
