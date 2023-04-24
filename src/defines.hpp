@@ -1,5 +1,4 @@
-#define DEFINES_H
-#ifdef DEFINES_H
+#pragma once
 #include <cstdint>
 
 typedef int8_t i8;
@@ -16,4 +15,3 @@ typedef __uint128_t ui128;
 
 typedef float f32;
 typedef double f64;
-#endif
