@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 out vec4 FragColor;
 
@@ -15,7 +15,7 @@ void main()
 {
     vec3 ourColor;
 
-    float h = (Height + 64)/128.0f;
+    float h = (Height + 128)/256.0f;
     if(h > 1.25){
         ourColor = vec3(0.85, 0.85, 0.85);
     }
@@ -65,14 +65,14 @@ void main()
         ourColor = vec3(0.0, 0.32, 0.0);
     }
     else{
-        ourColor = vec3(h + 0.89, h + 0.737,h + 0.604);
+        ourColor = vec3(h + 0.89,h + 0.737,h + 0.604);
     }
     //vec3 ourColor = vec3(outColor);
     //ourColor = vec3(h, h, h + 0.3);
-    vec3 lightColor = vec3(h + 0.3, h + 0.3, h + 0.3);
-    //vec3 lightColor = vec3(1.0, 1.0, 1.0);
+    vec3 lightColor = vec3(h + 0.8, h + 0.8, h + 0.8);
+    //vec3 lightColor = vec3(0.6, 0.6, 0.6);
 
-    float ambientStrength = 0.35f;
+    float ambientStrength = 0.05f;
     vec3 ambient = ambientStrength * lightColor;
 
     vec3 norm = normalize(Normal);
@@ -81,10 +81,10 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 diffuse = diff * lightColor;
 
-    float specularStrength = 0.5f;
+    float specularStrength = 0.1f;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 1);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 2);
     vec3 specular = specularStrength * spec * lightColor;
 
     vec3 result = (ambient + diffuse + specular) * ourColor;

@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 out vec4 FragColor;
 
@@ -17,7 +17,7 @@ void main()
     vec3 ourColor;
 
     float h = (Height + 8)/16.0f;
-    ourColor = vec3(h + 0.0, h + 0.0, h + 0.4);
+    ourColor = vec3(h + 0.0, h + 0.0, h + 0.5);
     // if(h >= 1.0){
     //     ourColor = vec3(h + 1.0, h, h);
     // }
@@ -49,10 +49,10 @@ void main()
     //     ourColor = vec3(h + 0.1, h, h);
     // }
     //vec3 ourColor = vec3(h, h, h + 0.3);
-    vec3 lightColor = vec3(h + 0.3, h + 0.3, h + 0.3);
+    vec3 lightColor = vec3(h + 0.8, h + 0.8, h + 0.8);
     //vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
-    float ambientStrength = 0.35;
+    float ambientStrength = 0.05;
     vec3 ambient = ambientStrength * lightColor;
 
     vec3 norm = normalize(Normal);
@@ -61,12 +61,12 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 diffuse = diff * lightColor;
 
-    float specularStrength = 0.5f;
+    float specularStrength = 0.8f;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 512);
-    vec3 specular = specularStrength * spec * lightColor;
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 256);
+    vec3 specular = specularStrength * spec * lightColor * h;
 
     vec3 result = (ambient + diffuse + specular) * ourColor;
-    FragColor = vec4(result, 1.0f);
+    FragColor = vec4(result, 0.35f);
 }
