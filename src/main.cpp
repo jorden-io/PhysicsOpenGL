@@ -155,22 +155,26 @@ void change_magnitude(f32 map[1000][1000], i32 magnitude)
     //     }
     // }
 #define h_magnitude 25
-    return;};
+    return;
+};
 bool show_land{true};
 bool show_water{false};
 i32 height = 250;
 i32 width = 250;
 static i8 last_magnitude{(i8)magnitude};
-inline void createSphere(float radius, int numSlices, int numStacks, const siv::PerlinNoise::seed_type seed, i32 mag, f32 per){
+inline void createSphere(float radius, int numSlices, int numStacks, const siv::PerlinNoise::seed_type seed, i32 mag, f32 per)
+{
     const siv::PerlinNoise perlin{seed};
     std::vector<GLfloat> bertices;
     std::vector<GLuint> bindices;
     const i32 numStrips = (numStacks - 1) / 1;
     const i32 numTrisPerStrip = (numSlices / 1) * 2 - 2;
-    for (int i = 0; i < numStacks - 1; i++){
+    for (int i = 0; i < numStacks - 1; i++)
+    {
         float v = i / (float)numStacks;
         float phi = v * glm::pi<float>();
-        for (int j = 0; j < numSlices - 1; j++){
+        for (int j = 0; j < numSlices - 1; j++)
+        {
             const f64 noise = perlin.octave2D((f64)(i * 0.00035), (f64)(j * 0.00035), mag, per);
             float u = j / (float)numSlices;
             float theta = u * glm::two_pi<float>();
@@ -184,9 +188,13 @@ inline void createSphere(float radius, int numSlices, int numStacks, const siv::
             bertices.push_back(y);
             bertices.push_back(z);
             bertices.push_back(u);
-            bertices.push_back(v);}};
-    for (int i = 0; i <= numStacks; i++){
-        for (int j = 0; j <= numSlices; j++){
+            bertices.push_back(v);
+        }
+    };
+    for (int i = 0; i <= numStacks; i++)
+    {
+        for (int j = 0; j <= numSlices; j++)
+        {
             int a = i * (numSlices + 1) + j;
             int b = a + numSlices + 1;
             bindices.push_back(a);
@@ -194,7 +202,9 @@ inline void createSphere(float radius, int numSlices, int numStacks, const siv::
             bindices.push_back(a + 1);
             bindices.push_back(b);
             bindices.push_back(b + 1);
-            bindices.push_back(a + 1);}}
+            bindices.push_back(a + 1);
+        }
+    }
     GLuint vbo, vao, ibo;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -207,13 +217,16 @@ inline void createSphere(float radius, int numSlices, int numStacks, const siv::
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 32 * sizeof(GLfloat), (void *)0);
     glBindVertexArray(vao);
-    for (ui32 strip = 0; strip < numStrips; strip++){
+    for (ui32 strip = 0; strip < numStrips; strip++)
+    {
         glDrawElements(
             GL_TRIANGLE_STRIP,
             numTrisPerStrip + 2,
             GL_UNSIGNED_INT,
-            (void *)(sizeof(ui32) * (numTrisPerStrip + 2) * strip));};
-    glBindVertexArray(0);};
+            (void *)(sizeof(ui32) * (numTrisPerStrip + 2) * strip));
+    };
+    glBindVertexArray(0);
+};
 i32 main()
 {
     glfwInit();
@@ -274,7 +287,6 @@ i32 main()
         for (i32 j = 0; j < width; j++)
         {
             terrain_vertices.push_back(-height / 2.0f + height * i / (f32)height); // vx
-            // tvertices.push_back(tmap[i][j] - 285);                          // vy
             terrain_vertices.push_back(tmap[i][j] - 350);                       // vy
             terrain_vertices.push_back(-width / 2.0f + width * j / (f32)width); // vz
         }
@@ -426,29 +438,10 @@ i32 main()
 
     static f64 z_rotation{0.0};
 
-    // int tes_width{100};
-    // int tes_height{100};
-    // int nrChannels{100};
-    // unsigned char ndata[10000];
-    // i128 ation{0};
-    // for (i32 i = 0; i < tes_height; i++)
-    // {
-    //     for (i32 j = 0; j < tes_width; j++)
-    //     {
-    //         const f64 noise = tperlin.octave2D((f64)((i * 0.00035f)), (f64)((j * 0.00035f)), (i32)(5), 0.80);
-    //         ndata[ation] = (unsigned char)(noise * 100);
-    //         ation++;
-    //     };
-    // };
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tes_width, tes_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (void *)(&ndata[0]));
-    // glGenerateMipmap(GL_TEXTURE_2D);
-
-    // tessHeightMapShader.setInt("heightMap", 0);
-
     int tes_width{0};
     int tes_height{0};
     int nrChannels{0};
-    unsigned char *data = stbi_load("map.png", &tes_width, &tes_height, &nrChannels, 0);
+    unsigned char *data = stbi_load("./resources/imgs/map.png", &tes_width, &tes_height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tes_width, tes_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -574,7 +567,6 @@ i32 main()
                                (void *)(sizeof(ui32) * (numTrisPerStrip + 2) * strip));
             };
         };
-
         if (show_water)
         {
             std::vector<f32> tvertices;
