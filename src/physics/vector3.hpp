@@ -1,6 +1,7 @@
 #pragma once
 #include "../defines.hpp"
 #include <cmath>
+// #include <ostream>
 namespace Physics
 {
     class Vector3Dimensional
@@ -10,6 +11,41 @@ namespace Physics
         f32 y{0.0f};
         f32 z{0.0f};
 
+        f32 operator[](i32 n)
+        {
+            if (n > 3)
+            {
+                std::cout << "beyond";
+                return 0;
+            };
+            switch (n)
+            {
+            case 0:
+            {
+                return this->x;
+                break;
+            };
+            case 1:
+            {
+                return this->y;
+                break;
+            };
+            case 2:
+            {
+                return this->z;
+                break;
+            };
+            default:
+            {
+                return 0;
+            }
+            };
+        };
+        friend std::ostream &operator<<(std::ostream &out, const Vector3Dimensional &vector)
+        {
+            out << vector.x << vector.y << vector.z;
+            return out;
+        };
         Vector3Dimensional(f32 n) : x{n}, y{n}, z{n} {};
         Vector3Dimensional(f32 _x, f32 _y, f32 _z) : x{_x}, y{_y}, z{_z} {};
         void add(Vector3Dimensional vec)
@@ -61,6 +97,7 @@ namespace Physics
             }
         };
     };
+    typedef Vector3Dimensional RGBVector;
     using Point3Dimensional = Vector3Dimensional;
     using DirectionVector3Dimensional = Vector3Dimensional;
 };

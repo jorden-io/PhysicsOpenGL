@@ -357,7 +357,6 @@ i32 main()
         light_shader.setMat4("view", view);
         glBindVertexArray(sphereVAO);
         renderSphere();
-
         const i32 mass = object.mass;
         Physics::Vector3Dimensional wind{0.001f, 0.0f, 0.002f};
         Physics::Vector3Dimensional gravity{0.0f, 0.1f * mass, 0.0f};
