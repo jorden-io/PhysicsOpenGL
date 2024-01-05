@@ -20,17 +20,18 @@
 #include "classes/indexBuffer.hpp"
 #include "physics/vector3.hpp"
 #include "physics/movingObject.hpp"
+#include "math/matrix4.hpp"
 #define SCR_WIDTH 1600
 #define SCR_HEIGHT 1600
 unsigned int sphereVAO = 0;
 unsigned int indexCount;
 double xpos, ypos;
+bool shot = false;
 static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
 {
     // glfwGetCursorPos(window, &xpos, &ypos);
     std::cout << "Position: (" << xpos << ":" << ypos << ")";
 }
-
 void renderSphere()
 {
     if (sphereVAO == 0)
@@ -235,9 +236,6 @@ i32 main()
     glEnable(GL_DEPTH_TEST);
     // c_shader.set_paths("../shaders/shader.vs", "../shaders/shader.fs");
 
-    std::vector<f32> terrain_vertices;
-    std::vector<ui32> terrain_indices;
-
     const i8 rez{1};
     float vertices[] = {
         -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
@@ -301,7 +299,6 @@ i32 main()
 
     const siv::PerlinNoise::seed_type tseed{1234567u};
     const siv::PerlinNoise tperlin{tseed};
-
     const gl::shader light_shader{"../shaders/light_shader.vs", "../shaders/light_shader.fs"};
     const gl::shader tshader{"../shaders/tshader.vs", "../shaders/tshader.fs"};
     const gl::shader water_shader{"../shaders/water_shader.vs", "../shaders/water_shader.fs"};
@@ -311,7 +308,65 @@ i32 main()
                                "../shaders/tes.tcs", "../shaders/tes.tes");
     ui32 counter{0};
     renderSphere();
-    Physics::MovingObject object{{0, 0, 0}, {0.0, 0.0, 0.0}, {0.001, 0.001, 0.0}};
+    Physics::MovingObject object{{0, 0, 0}, {0.0, 0.0, 0.0}, {0.01, 0.01, 0.01}};
+    Math::Matrix4Dimensional<f64> matrix(1.0f);
+
+    std::vector<f32> terrain_vertices;
+    std::vector<ui32> terrain_indices;
+    i32 height = 200;
+    i32 width = 200;
+    for (i32 i = 0; i < height; i++)
+    {
+        for (i32 j = 0; j < width; j++)
+        {
+            terrain_vertices.push_back(-height / 2.0f + height * i / (f32)height);        // vx
+            terrain_vertices.push_back((8 * cos(sqrt((i * i) * 0.02 + (j * j) * 0.02)))); // vy
+            terrain_vertices.push_back(-width / 2.0f + width * j / (f32)width);           // vz
+            terrain_vertices.push_back(-height / 2.0f + height * i / (f32)height);        // vx
+            terrain_vertices.push_back((8 * cos(sqrt((i * i) * 0.02 + (j * j) * 0.02)))); // vy
+            terrain_vertices.push_back(-width / 2.0f + width * j / (f32)width);           // vz
+        }
+    }
+    for (ui32 i = 0; i < height - 1; i += rez)
+    {
+        for (ui32 j = 0; j < width; j += rez)
+        {
+            for (ui32 k = 0; k < 2; k++)
+            {
+                terrain_indices.push_back(j + width * (i + k * rez));
+            };
+        };
+    };
+    gl::vertex_array smooth_terrainVAO{};
+    smooth_terrainVAO.bind();
+
+    gl::vertex_buffer smooth_terrainVBO{&terrain_vertices[0], (ui32)(terrain_vertices.size() * sizeof(f32))};
+
+    smooth_terrainVAO.vertex_attrib_pointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)0);
+    smooth_terrainVAO.enable_vertex_attrib_array(0);
+
+    smooth_terrainVAO.vertex_attrib_pointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void *)0);
+    smooth_terrainVAO.enable_vertex_attrib_array(1);
+
+    gl::index_buffer<1> smooth_terrainIBO{&terrain_indices[0], (ui32)(terrain_indices.size() * sizeof(i32))};
+    smooth_terrainVAO.unbind();
+    theta = 1;
+    glm::vec3 ball_posCLONE = cam.Position;
+    glm::vec3 ballVelocityCLONE = cam.Front;
+    class Bullet
+    {
+    public:
+        glm::vec3 bullet_position{};
+        glm::vec3 bullet_velocity{};
+        bool was_shot = false;
+        Bullet(glm::vec3 p, glm::vec3 v) : bullet_position{p}, bullet_velocity{v} {};
+    };
+    std::vector<Bullet> bullets{};
+    const i32 BULLETAMMOUNT = 10;
+    for (i32 i = 0; i < BULLETAMMOUNT; i++)
+    {
+        bullets[i] = Bullet(glm::vec3{0}, glm::vec3{0});
+    };
     while (!glfwWindowShouldClose(window))
     {
         // glfwGetCursorPos(window, &xpos, &ypos);
@@ -323,14 +378,14 @@ i32 main()
             std::string fps{std::to_string((1.0f / deltaTime) * counter)};
             std::string ms{std::to_string((deltaTime / counter) * 1000)};
             // std::string title{"FRAMES::[" + fps + "]" + "    " + "[" + ms + "]::MILLISECONDS"};
-            std::string title{"FRAMES::[" + std::to_string(xpos) + "]" + "    " + "[" + std::to_string(ypos) + "]::MILLISECONDS"};
+            std::string title = !shot ? ("x-" + std::to_string(cam.Position.x) + " y-" + std::to_string(cam.Position.y) + " z-" + std::to_string(cam.Position.z) + "[" + std::to_string(cam.Front.x * theta) + " " + std::to_string(cam.Front.y) + " " + std::to_string(cam.Front.z)) : "shot" + std::to_string(ball_posCLONE.y);
             glfwSetWindowTitle(window, title.c_str());
             lastFrame = currentFrame;
             counter = 0;
         };
         processInput(window);
 
-        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 lmodel{glm::mat4(1.0f)};
@@ -338,60 +393,145 @@ i32 main()
         glm::mat4 wmodel{glm::mat4(1.0f)};
         const glm::mat4 projection{glm::perspective(glm::radians(cam.Zoom), (f32)SCR_WIDTH / (f32)SCR_HEIGHT, 0.1f, 100000.0f)};
         const glm::mat4 view{cam.GetViewMatrix()};
-        i32 sradious{100};
+        i32 sradious{300};
         // light_x = 2;
         // light_y = 2;
         // light_z = 2;
-        light_x = sradious * cos(theta);
-        light_y = sradious * sin(theta);
+        // sradious -= theta;
+        // light_x = sradious * (sin(theta));
+        // light_y = sradious * (cos(theta)) + 300;
+        // light_x = sradious * (sin((theta)));
+        // light_y = sradious * -(cos(sin(theta)));
         light_z = 0.0f;
+        Physics::Vector3Dimensional lvector{light_x, light_y, light_z};
+        Physics::Vector3Dimensional lfriction{light_x, light_y, light_z};
+        lfriction.scale(-1);
+        lfriction.normalize();
+        lfriction.scale(0.1);
         // light_z = sradious * cos(theta);
-
-        lmodel = glm::translate(lmodel, glm::vec3{light_x, light_y, light_z});
+        lmodel = glm::translate(lmodel, glm::vec3{light_x, 10, light_z});
         const glm::vec3 lightPos{light_x, light_y, light_z};
         // lmodel = glm::rotate<f32>(lmodel, (f32)glfwGetTime() * 2, glm::vec3{10.0, 0.5, 0.02});
-        lmodel = glm::scale(lmodel, glm::vec3{2.0f, 2.0f, 2.0f});
+        lmodel = glm::scale(lmodel, glm::vec3{1.8f, 1.8f, 1.8f});
         light_shader.use();
         light_shader.setMat4("model", lmodel);
         light_shader.setMat4("projection", projection);
         light_shader.setMat4("view", view);
         glBindVertexArray(sphereVAO);
         renderSphere();
-        const i32 mass = object.mass;
-        Physics::Vector3Dimensional wind{0.001f, 0.0f, 0.002f};
-        Physics::Vector3Dimensional gravity{0.0f, 0.1f * mass, 0.0f};
-        const f32 friction_constant = 0.01f;
-        Physics::Vector3Dimensional friction_vector{object.get_vector_copy(Physics::MovingObject::Vectors::Velocity)};
-        friction_vector.scale(-1);
-        friction_vector.normalize();
-        friction_vector.scale(friction_constant);
+        // const i32 mass = object.mass;
+        // Physics::Vector3Dimensional wind{0.001f, 0.0f, 0.002f};
+        // Physics::Vector3Dimensional gravity{0.0f, 0.1f * mass, 0.0f};
+        // const f32 friction_constant = 10.1f;
+        // Physics::Vector3Dimensional friction_vector{object.get_vector_copy(Physics::MovingObject::Vectors::Velocity)};
+        // friction_vector.scale(-1);
+        // friction_vector.normalize();
+        // friction_vector.scale(friction_constant);
 
-        object.accumulate_force(friction_vector);
-        object.accumulate_force(gravity);
-        object.accumulate_force(wind);
+        // Physics::Vector3Dimensional distance{object.location_vector.magnitude() - Physics::Vector3Dimensional{light_x, light_y, light_z}.magnitude()};
+        // object.accumulate_force(friction_vector);
+        // object.accumulate_force(gravity);
+        // object.accumulate_force(wind);
+        // object.location_vector = lvector;
+        // object.accumulate_force(lfriction);
+        // object.accumulate_force(wind);
 
-        object.copy_vector_data(Physics::Vector3Dimensional{light_x, light_y, light_z});
-        Physics::Vector3Dimensional copied_location_vector(object.get_vector_copy(Physics::MovingObject::Vectors::Location));
+        // object.copy_vector_data(Physics::Vector3Dimensional{light_x, light_y, light_z});
+        // Physics::Vector3Dimensional copied_location_vector(object.get_vector_copy(Physics::MovingObject::Vectors::Location));
         // Physics::Vector3Dimensional copied_velocity_vector(object.get_vector_copy(Physics::MovingObject::Vectors::Velocity));
-        const f32 v_angle{Physics::DirectionVector3Dimensional::dot_product(copied_location_vector, Physics::Vector3Dimensional{light_x, light_y, light_z}) / (copied_location_vector.magnitude() * Physics::Vector3Dimensional{light_x, light_y, light_z}.magnitude())};
+        // const f32 v_angle{Physics::DirectionVector3Dimensional::dot_product(copied_location_vector, Physics::Vector3Dimensional{light_x, light_y, light_z}) / (copied_location_vector.magnitude() * Physics::Vector3Dimensional{light_x, light_y, light_z}.magnitude())};
         // object.angle = atan2(light_x, light_z);
-        object.update();
+        // object.update();
         // object.checkEdges();
-        model = glm::translate(model, glm::vec3{object.location_vector.x, object.location_vector.y, object.location_vector.z});
-        model = glm::scale(model, {10.0f, 10.0f, 10.0f});
-        model = glm::rotate(model, atan2(object.velocity_vector.x, object.velocity_vector.y), glm::vec3{0, 0, 1});
+        i32 screen_height = SCR_HEIGHT;
+        i32 screen_width = SCR_WIDTH;
 
+        const f32 mid_x = 0.5f;
+        const f32 mid_y = 0.5f;
+
+        float normalizedX = 2.0f * mid_x / screen_width - 1.0f;
+        float normalizedY = 1.0f - 2.0f * mid_y / screen_height;
+
+        glm::mat4 invProjectionMatrix = glm::inverse(projection);
+        glm::mat4 invViewMatrix = glm::inverse(view);
+
+        glm::vec4 cameraCoords = invProjectionMatrix * glm::vec4(normalizedX, normalizedY, -1.0f, 1.0f);
+        cameraCoords.z = -1.0f;
+        cameraCoords.w = 0.0f;
+
+        glm::vec4 worldCoords = invViewMatrix * cameraCoords;
+
+        glm::vec3 rayDirection = glm::normalize(glm::vec3(worldCoords));
+
+        // glm::vec3 rayOrigin = glm::vec3(cam.Position.x * glfwGetTime(), cam.Position.y * glfwGetTime(), cam.Position.z * glfwGetTime());
+
+        // model = glm::translate(model, glm::vec3{object.location_vector.x, object.location_vector.y, object.location_vector.z});
+
+        glm::vec3 ball_pos;
+        glm::vec3 ballVelocity;
+        glm::vec3 grav = glm::vec3(0, -0.008, 0);
+        if (!shot)
+        {
+            theta = 1;
+            ball_posCLONE = cam.Position;
+            ballVelocityCLONE = cam.Front;
+        };
+        ball_pos = ball_posCLONE;
+        ballVelocity += ballVelocityCLONE;
+        ballVelocity *= theta;
+        glm::vec3 updatedBallPosition = glm::vec3{(ball_pos.x + ballVelocity.x), (ball_pos.y + ballVelocity.y), (ball_pos.z + ballVelocity.z)};
+        ballVelocity = glm::vec3{0};
+        model = glm::translate(model, glm::vec3{updatedBallPosition.x, updatedBallPosition.y, updatedBallPosition.z});
+        model = glm::scale(model, {0.2f, 0.2f, 0.2f});
+        // model = glm::rotate(model, atan2(object.velocity_vector.x, object.velocity_vector.y), glm::vec3{0, 0, 1});
+        const f32 dist = glm::sqrt(((glm::pow((light_x - updatedBallPosition.x), 2)) + (glm::pow((10 - updatedBallPosition.y), 2)) + (glm::pow((light_z - updatedBallPosition.z), 2))));
+        if (shot)
+        {
+            theta += dist < 2.4 ? 0 : 0.8;
+        };
+        std::string title = !shot ? ("x-" + std::to_string(cam.Position.x) + " y-" + std::to_string(cam.Position.y) + " z-" + std::to_string(cam.Position.z) + "[" + std::to_string(cam.Front.x * theta) + " " + std::to_string(cam.Front.y) + " " + std::to_string(cam.Front.z)) : "shot" + std::to_string(dist);
+        glfwSetWindowTitle(window, title.c_str());
         tshader.use();
-        tshader.setMat4("model", model);
+        // Math::Matrix4Dimensional<f64>::rotateY(&matrix, glfwGetTime(), Physics::Vector3Dimensional{22});
         tshader.setMat4("projection", projection);
+        tshader.setMat4("model", model);
+        // tshader.setMat4("model", glm::mat4(1.0f));
         tshader.setMat4("view", view);
-        tshader.setVec3("lightPos", glm::vec3{light_x, light_y, light_z});
+        tshader.setVec3("lightPos", glm::vec3{light_x, 10, light_z});
         tshader.setVec3("viewPos", cam.Position);
-        // glBindVertexArray(sphereVAO);
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        tshader.setFloat("height", 10);
+        f32 ii = 0.0;
+        // for (f32 x = 0; x < 30; x += 0.2)
+        // {
+        //     for (f32 y = 0; y < 30; y += 0.2)
+        //     {
+        //         ii += 0.8;
+        //         model = glm::mat4(1.0f);
+        //         // theta += 0.2;
+        //         // model = glm::translate(model, glm::vec3{i, j, 2 * sin(sqrt((i * i) + (glfwGetTime() * 15) + (j* j) + (glfwGetTime() * 15)))});
+        //         // model = glm::translate(model, glm::vec3{j, 2 * sin(sqrt((i * i) + (glfwGetTime() * 100) + (j * j) + (glfwGetTime() * 100))), i});
+        //         model = glm::translate(model, {x, (sin(glm::sqrt(cos(x * x) + sin(y * y)))), y});
 
-        // renderSphere();
+        //         tshader.setMat4("model", model);
+        //         // glBindVertexArray(sphereVAO);
+        //         // renderSphere();
+        //         glBindVertexArray(cubeVAO);
+        //         glDrawArrays(GL_TRIANGLES, 0, 36);
+        //     }
+        // };
+        // const i16 numStrips = (height - 1) / 1;
+        // const i16 numTrisPerStrip = (height / 1) * 2 - 2;
+        // smooth_terrainVAO.bind();
+        // for (ui32 strip = 0; strip < numStrips; strip++)
+        // {
+        //     glDrawElements(GL_TRIANGLE_STRIP,
+        //                    numTrisPerStrip + 2,
+        //                    GL_UNSIGNED_INT,
+        //                    (void *)(sizeof(ui32) * (numTrisPerStrip + 2) * strip));
+        // };
+        renderSphere();
+        // glBindVertexArray(cubeVAO);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // wmodel = glm::translate(wmodel, glm::vec3{0, 0, 0});
         // wmodel = glm::scale(wmodel, glm::vec3{40});
@@ -416,7 +556,10 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
-        theta += 0.03;
+    {
+        shot = true;
+        theta += 0.6;
+    }
     if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
         swap_poly_mode(0);
     if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)

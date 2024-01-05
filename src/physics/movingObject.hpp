@@ -32,7 +32,7 @@ namespace Physics
             temp_use_vector.y = vector.y;
             temp_use_vector.z = vector.z;
         };
-        static Vector3Dimensional get_vector_copy(Vectors vector_enum)
+        Vector3Dimensional get_vector_copy(Vectors vector_enum)
         {
             switch (vector_enum)
             {
@@ -52,15 +52,15 @@ namespace Physics
         };
         void update()
         {
-            // DirectionVector3Dimensional direction_vector = Vector3Dimensional::sub(temp_use_vector, location_vector);
-            // direction_vector.normalize();
-            // direction_vector.scale(0.02);
-            // acceleration_vector = direction_vector;
+            DirectionVector3Dimensional direction_vector = Vector3Dimensional::sub(temp_use_vector, location_vector);
+            direction_vector.normalize();
+            direction_vector.scale(0.02);
+            acceleration_vector = direction_vector;
             velocity_vector.add(acceleration_vector);
             location_vector.add(velocity_vector);
 
-            // angular_velocity += angular_acceleration;
-            // angle += angular_velocity;
+            angular_velocity += angular_acceleration;
+            angle += angular_velocity;
 
             acceleration_vector.scale(0);
         };

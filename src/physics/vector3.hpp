@@ -1,7 +1,6 @@
 #pragma once
 #include "../defines.hpp"
 #include <cmath>
-// #include <ostream>
 namespace Physics
 {
     class Vector3Dimensional
@@ -10,7 +9,6 @@ namespace Physics
         f32 x{0.0f};
         f32 y{0.0f};
         f32 z{0.0f};
-
         f32 operator[](i32 n)
         {
             if (n > 3)
@@ -61,6 +59,11 @@ namespace Physics
             temp_vector.y = vec1.y - vec2.y;
             temp_vector.z = vec1.z - vec2.z;
             return temp_vector;
+        };
+        void operator=(Physics::Vector3Dimensional vector){
+            this->x = vector.x;
+            this->y = vector.y;
+            this->z = vector.z;
         };
         static f32 dot_product(Physics::Vector3Dimensional v1, Physics::Vector3Dimensional v2)
         {

@@ -1,0 +1,146 @@
+<div
+  style="
+    gap: 30px;
+    position: absolute;
+    z-index: 9001;
+    display: flex;
+    justify-content: center;
+  "
+>
+  <button>left</button>
+  <button>right</button>
+</div>
+
+<div style="display: flex; justify-content: center">
+  <div class="cover">
+    <div class="imgBox">
+      <img
+        width="600"
+        class="book-img"
+        src="https://sliquid.com/wp-content/uploads/2023/12/Calvista-Catalog-Artwork-Valentine-scaled.jpg"
+      />
+    </div>
+
+    <div class="frontPage">
+      <h2 class="book-h2">
+        Sliquid <br />
+        SIMPLE. SAFE. SEXY. <br />
+        <hr class="hr" />
+        Chapter 1
+        <hr class="hr" />
+      </h2>
+      <div style="display: flex; justify-content: center; gap: 20px">
+        <a href="http://sliquid.com">
+          <img
+            width="120"
+            src="https://sliquid.com/wp-content/uploads/2023/11/Autumn-H2O-1200x1200-1.jpg"
+          />
+        </a>
+        <img
+          width="120"
+          src="https://sliquid.com/wp-content/uploads/2023/10/Autumn-Balance-Splash-1200x1200-1.jpg"
+        />
+      </div>
+
+      <p class="book-p">natural ingredients, pH-balanced</p>
+      <img
+        width="300"
+        src="https://sliquid.com/wp-content/uploads/2023/11/Autumn-Sliquid-banner-Oringinal-size-scaled.jpg"
+      />
+      <p class="pagenumber"></p>
+    </div>
+  </div>
+</div>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .cover {
+    margin-left: 600px;
+    margin-top: 150px;
+    top: 10%;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%) perspective(2000px);
+    width: 600px;
+    height: 400px;
+    background: #fff;
+    box-shadow: 0px 0px 12px black;
+    transition: 1.5s;
+  }
+  .cover:hover {
+    transform: translate(-50%, -50%) perspective(2000px) rotate(-10deg);
+    box-shadow: 0px 0px 14px black;
+  }
+  .cover:before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: #323a3c;
+    transform-origin: bottom;
+    transform: skewX(-45deg);
+  }
+  .cover:after {
+    content: "";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 5px;
+    height: 101%;
+    background: #323a3c;
+    transform-origin: left;
+    transform: skeyY(-45deg);
+    z-index: 1;
+  }
+  .book-img {
+    overflow: hidden;
+    width: 600px;
+    height: 400px;
+  }
+  .cover .imgBox {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-origin: left;
+    transition: 2s cubic-bezier(0.27, 1.03, 0.75, 0.43);
+    z-index: 1;
+  }
+
+  .cover:hover .imgBox {
+    transform: rotateY(-175deg);
+  }
+
+  .cover .frontPage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    padding: 20px;
+  }
+  .book-h2 .book-p {
+    padding: 0;
+    margin: 0;
+  }
+
+  .book-h2 {
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .pagenumber {
+    text-align: right;
+  }
+
+  .book-p {
+    text-align: justify;
+    font-size: 14px;
+  }
+</style>
