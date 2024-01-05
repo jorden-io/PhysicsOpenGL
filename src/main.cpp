@@ -197,7 +197,17 @@ void swap_fshader(enums::shader_t shader_e, const char *fshader_path, const char
     return;
 };
 f32 flying{0.0f};
-f32 theta{0};
+f32 theta{1};
+class Bullet
+{
+public:
+    glm::vec3 bullet_positionONCE{};
+    glm::vec3 bullet_velocityONCE{};
+    glm::vec3 bullet_position{};
+    glm::vec3 bullet_velocity{};
+    bool was_shot = false;
+    Bullet(){};
+};
 i32 main()
 {
     glfwInit();
@@ -353,19 +363,11 @@ i32 main()
     theta = 1;
     glm::vec3 ball_posCLONE = cam.Position;
     glm::vec3 ballVelocityCLONE = cam.Front;
-    class Bullet
-    {
-    public:
-        glm::vec3 bullet_position{};
-        glm::vec3 bullet_velocity{};
-        bool was_shot = false;
-        Bullet(glm::vec3 p, glm::vec3 v) : bullet_position{p}, bullet_velocity{v} {};
-    };
-    std::vector<Bullet> bullets{};
+    Bullet bullets[11]{};
     const i32 BULLETAMMOUNT = 10;
-    for (i32 i = 0; i < BULLETAMMOUNT; i++)
+    for (i32 i = 0; i < 10; i++)
     {
-        bullets[i] = Bullet(glm::vec3{0}, glm::vec3{0});
+        bullets[i] = Bullet();
     };
     while (!glfwWindowShouldClose(window))
     {
@@ -466,31 +468,52 @@ i32 main()
         // glm::vec3 rayOrigin = glm::vec3(cam.Position.x * glfwGetTime(), cam.Position.y * glfwGetTime(), cam.Position.z * glfwGetTime());
 
         // model = glm::translate(model, glm::vec3{object.location_vector.x, object.location_vector.y, object.location_vector.z});
-
-        glm::vec3 ball_pos;
-        glm::vec3 ballVelocity;
         glm::vec3 grav = glm::vec3(0, -0.008, 0);
-        if (!shot)
-        {
-            theta = 1;
-            ball_posCLONE = cam.Position;
-            ballVelocityCLONE = cam.Front;
-        };
-        ball_pos = ball_posCLONE;
-        ballVelocity += ballVelocityCLONE;
-        ballVelocity *= theta;
-        glm::vec3 updatedBallPosition = glm::vec3{(ball_pos.x + ballVelocity.x), (ball_pos.y + ballVelocity.y), (ball_pos.z + ballVelocity.z)};
-        ballVelocity = glm::vec3{0};
-        model = glm::translate(model, glm::vec3{updatedBallPosition.x, updatedBallPosition.y, updatedBallPosition.z});
+        // Bullet current_bullet = bullets[bullets.size() - 1];
+        // if (!current_bullet.was_shot)
+        // {
+        //     theta = 1;
+        //     current_bullet.bullet_positionONCE = cam.Position;
+        //     current_bullet.bullet_velocityONCE = cam.Front;
+        // }
+        // if (current_bullet.was_shot)
+        // {
+        //     if (bullets.size() > 1)
+        //     {
+        //         bullets.pop_back();
+        //         theta = 0;
+        //     }
+        // }
+        // current_bullet.bullet_position = current_bullet.bullet_positionONCE;
+        // current_bullet.bullet_velocity += current_bullet.bullet_velocityONCE;
+        // current_bullet.bullet_velocity += theta;
+
+        // glm::vec3 ball_pos;
+        // glm::vec3 ballVelocity;
+        // if (!shot)
+        // {
+        //     theta = 1;
+        //     ball_posCLONE = cam.Position;
+        //     ballVelocityCLONE = cam.Front;
+        // };
+        // ball_pos = ball_posCLONE;
+        // ballVelocity += ballVelocityCLONE;
+        // ballVelocity *= theta;
+        // glm::vec3 updatedBallPosition = glm::vec3{(ball_pos.x + ballVelocity.x), (ball_pos.y + ballVelocity.y), (ball_pos.z + ballVelocity.z)};
+
+        // glm::vec3 updatedBallPosition = glm::vec3{(current_bullet.bullet_position.x + current_bullet.bullet_velocity.x), (current_bullet.bullet_position.y + current_bullet.bullet_velocity.y), (current_bullet.bullet_position.z + current_bullet.bullet_velocity.z)};
+
+        // ballVelocity = glm::vec3{0};
+        // model = glm::translate(model, glm::vec3{updatedBallPosition.x, updatedBallPosition.y, updatedBallPosition.z});
         model = glm::scale(model, {0.2f, 0.2f, 0.2f});
         // model = glm::rotate(model, atan2(object.velocity_vector.x, object.velocity_vector.y), glm::vec3{0, 0, 1});
-        const f32 dist = glm::sqrt(((glm::pow((light_x - updatedBallPosition.x), 2)) + (glm::pow((10 - updatedBallPosition.y), 2)) + (glm::pow((light_z - updatedBallPosition.z), 2))));
-        if (shot)
-        {
-            theta += dist < 2.4 ? 0 : 0.8;
-        };
-        std::string title = !shot ? ("x-" + std::to_string(cam.Position.x) + " y-" + std::to_string(cam.Position.y) + " z-" + std::to_string(cam.Position.z) + "[" + std::to_string(cam.Front.x * theta) + " " + std::to_string(cam.Front.y) + " " + std::to_string(cam.Front.z)) : "shot" + std::to_string(dist);
-        glfwSetWindowTitle(window, title.c_str());
+        // const f32 dist = glm::sqrt(((glm::pow((light_x - updatedBallPosition.x), 2)) + (glm::pow((10 - updatedBallPosition.y), 2)) + (glm::pow((light_z - updatedBallPosition.z), 2))));
+        // if (current_bullet.was_shot)
+        // {
+        //     theta += dist < 2.4 ? 0 : 0.8;
+        // };
+        // std::string title = !shot ? ("x-" + std::to_string(cam.Position.x) + " y-" + std::to_string(cam.Position.y) + " z-" + std::to_string(cam.Position.z) + "[" + std::to_string(cam.Front.x * theta) + " " + std::to_string(cam.Front.y) + " " + std::to_string(cam.Front.z)) : "shot" + std::to_string(dist);
+        // glfwSetWindowTitle(window, title.c_str());
         tshader.use();
         // Math::Matrix4Dimensional<f64>::rotateY(&matrix, glfwGetTime(), Physics::Vector3Dimensional{22});
         tshader.setMat4("projection", projection);
